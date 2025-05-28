@@ -1,20 +1,12 @@
-const { Server } = require("socket.io");
+import e from "express";
+import http from 'http'
+import {Server} from 'socket.io'
+const app = e();
+const PORT = 4000;
 
-const io = new Server(4000, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true,
-  }
-});
+const server = http.createServer(app);
+const io = new Server(server);
 
-io.on("connection", (socket) => {
-  const userId = socket.handshake.query.userId;
-  console.log("Client connected:", socket.id, "User ID:", userId);
-
-  socket.join(userId);
-
-  socket.on("message", ({ content, to }) => {
-    io.to(to).emit("recieve-message", { content });
-  });
-});
+server.listen(PORT,()=>{
+  console.log("an socket server")
+})
