@@ -69,6 +69,8 @@ app.get("/chats", async (req, res) => {
     return res.status(400).json({ error: "Missing userId" });
   }
 
+  console.log("got a req")
+
   try {
     const contacts = await Message.aggregate([
       // Step 1: Filter messages where user is involved
