@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { config } from "dotenv";
 import Message from "./schema/Messages.js";
 import cors from 'cors'
+import { ObjectId } from "mongodb";
 config()
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -34,8 +35,6 @@ app.use(cors({
   credentials: true, // if using cookies or auth headers
 }));
 
-// OR, during development only (open to all)
-app.use(cors()); // use only in dev
 
 const io = new Server(server, {
   cors: {
@@ -62,6 +61,104 @@ app.get("/messages", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+app.get("/chats", async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    const contacts = await Message.aggregate([
+      // Step 1: Filter messages where user is involved
+      {
+        $match: {
+          $or: [
+            { from: userId },
+            { to: userId }
+          ]
+        }
+      },
+      // Step 2: Compute contact ID (the other user)
+      {
+        $addFields: {
+          contactId: {
+            $cond: [
+              { $eq: ["$from", userId] },
+              "$to",
+              "$from"
+            ]
+          }
+        }
+      },
+      // Step 3: Sort by timestamp so latest is first
+      {
+        $sort: {
+          timeStamp: -1
+        }
+      },
+      // Step 4: Group by contactId, keep latest message
+      {
+        $group: {
+          _id: "$contactId",
+          lastMessage: { $first: "$content" },
+          timeStamp: { $first: "$timeStamp" }
+        }
+      },
+      // Step 5: Convert contactId to ObjectId for lookup
+      {
+        $addFields: {
+          userObjectId: {
+            $convert: {
+              input: "$_id",
+              to: "objectId",
+              onError: null,
+              onNull: null
+            }
+          }
+        }
+      },
+      // Step 6: Lookup user details
+      {
+        $lookup: {
+          from: "users",
+          localField: "userObjectId",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+      // Step 7: Format output
+      {
+        $project: {
+          userId: "$user._id",
+          firstName: "$user.firstName",
+          avatar: "$user.avatar",
+          lastMessage: 1,
+          timeStamp: 1
+        }
+      },
+      // Optional: Sort by most recent chats
+      {
+        $sort: {
+          timeStamp: -1
+        }
+      }
+    ]);
+
+    console.log(contacts)
+
+    res.json(contacts);
+  } catch (error) {
+    console.error("Failed to fetch contacts:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+
+
 
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
