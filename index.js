@@ -45,7 +45,6 @@ const io = new Server(server, {
 
 app.get("/messages", async (req, res) => {
   const { from, to } = req.query;
-  console.log({ from, to })
 
   try {
     const messages = await Message.find({
@@ -62,6 +61,33 @@ app.get("/messages", async (req, res) => {
   }
 });
 
+app.delete("/messages", async (req, res) => {
+  try {
+    const {from}  = await req.query;
+    if (!from) {
+      return res.status(400).json({ error: "'from' query param is required." });
+    }
+
+    const deletedMessages = await Message.deleteMany({
+     $or: [
+    { from },
+    { to: from }
+  ]
+    });
+
+    return res.json({
+      message: "Messages deleted successfully.",
+      deletedCount: deletedMessages.deletedCount,
+    });
+
+  } catch (error) {
+    console.error("Error deleting messages:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+
 app.get("/chats", async (req, res) => {
   const { userId } = req.query;
 
@@ -69,7 +95,6 @@ app.get("/chats", async (req, res) => {
     return res.status(400).json({ error: "Missing userId" });
   }
 
-  console.log("got a req")
 
   try {
     const contacts = await Message.aggregate([
@@ -149,8 +174,6 @@ app.get("/chats", async (req, res) => {
       }
     ]);
 
-    console.log(contacts)
-
     res.json(contacts);
   } catch (error) {
     console.error("Failed to fetch contacts:", error);
@@ -183,8 +206,6 @@ io.on("connection", (socket) => {
   socket.on("send-message", (data) => {
 
     createMessage(data)
-
-    console.log("Message received:", data);
     io.to(data.to).emit("receive-message", {
       from: data.from,
       content: data.content,
