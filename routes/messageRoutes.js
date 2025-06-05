@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { DeleteChat, getAUserMessage, getUserChatsList } from "../controller/messageController";
+import { DeleteChat, getAUserMessage, getUserChatsList } from "../controller/messageController.js";
 
 const messageRouter = Router()
 
 messageRouter.get("/chats",getUserChatsList)
 messageRouter.delete("/deleteChat",DeleteChat)
-messageRouter.delete("/getMessage",getAUserMessage)
+messageRouter.get("/getMessage",getAUserMessage)
 
 
 

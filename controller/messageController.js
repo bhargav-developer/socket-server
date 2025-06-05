@@ -1,4 +1,4 @@
-import Message from "../schema/Messages";
+import Message from "../schema/Messages.js";
 
 export const getUserChatsList =  async (req, res) => {
   const { userId } = req.query;
@@ -104,8 +104,7 @@ export const getAUserMessage = async (req, res) => {
         { from, to },
         { from: to, to: from }
       ]
-    }).sort({ timeStamp: 1 }); // 1 = ascending, -1 = descending
-
+    }).sort({ timeStamp: 1 });
     res.json({ messages });
   } catch (error) {
     console.error("Failed to fetch messages:", error);

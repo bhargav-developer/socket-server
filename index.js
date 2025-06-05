@@ -45,7 +45,7 @@ const io = new Server(server, {
 
 
 
-app.use("/message",messageRouter)
+app.use("/messages",messageRouter)
 
 
 
