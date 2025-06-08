@@ -31,8 +31,8 @@ const PORT = 4000;
 const server = http.createServer(app);
 
 app.use(cors({
-  origin: 'http://localhost:3000', // your frontend URL
-  credentials: true, // if using cookies or auth headers
+  origin: 'http://localhost:3000', 
+  credentials: true,
 }));
 
 
@@ -44,12 +44,9 @@ const io = new Server(server, {
 });
 
 
+const onlineUsers = new Map()
 
 app.use("/messages",messageRouter)
-
-
-
-
 
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
@@ -62,8 +59,6 @@ io.on("connection", (socket) => {
   const createMessage = async (data) => {
     try {
       const res = await Message.create(data)
-      console.log(res)
-
     } catch (error) {
       console.log(error)
     }
