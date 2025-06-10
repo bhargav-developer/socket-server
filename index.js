@@ -80,6 +80,16 @@ io.on("connection", (socket) => {
     });
   });
 
+
+    socket.on("file-transfer-request", (data) => {
+      console.log(data)
+
+      socket.in(data.reciever).emit("file-transfer-request",{
+        sender: data.name
+      })
+      
+  });
+
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
