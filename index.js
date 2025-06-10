@@ -82,13 +82,17 @@ io.on("connection", (socket) => {
 
 
     socket.on("file-transfer-request", (data) => {
-      console.log(data)
 
       socket.in(data.reciever).emit("file-transfer-request",{
         sender: data.name
       })
       
   });
+
+  socket.on("accept-file-transfer",(data) => {
+    console.log("req accepted")
+    socket.in(data.from).emit("file-transfer")
+  })
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
