@@ -31,7 +31,7 @@ const PORT = 4000;
 const server = http.createServer(app);
 
 app.use(cors({
-  origin: 'http://localhost:3000', 
+  origin: 'http://localhost:3000',
   credentials: true,
 }));
 
@@ -46,7 +46,7 @@ const io = new Server(server, {
 
 const onlineUsers = new Map()
 
-app.use("/messages",messageRouter)
+app.use("/messages", messageRouter)
 
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
@@ -80,16 +80,30 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("file-meta", (data) => {
+    socket.in(data.reciverId).emit("meta-transfer", [{
+      file: data.name,
+      size: data.size,
+    }])
+  })
 
-    socket.on("file-transfer-request", (data) => {
+  socket.on("file-transfer-request", (data) => {
 
-      socket.in(data.reciever).emit("file-transfer-request",{
-        sender: data.name
-      })
-      
+    socket.in(data.reciever).emit("file-transfer-request", {
+      sender: data.name
+    })
+
   });
 
-  socket.on("accept-file-transfer",(data) => {
+   socket.on("file-chunk", (data) => {
+    console.log("file-data",data)
+    socket.in(data.recieverId).emit("recieve-file-chunk", {
+      fileData: data.fileData
+    })
+
+  });
+
+  socket.on("accept-file-transfer", (data) => {
     console.log("req accepted")
     socket.in(data.from).emit("file-transfer")
   })
