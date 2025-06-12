@@ -70,13 +70,15 @@ io.on("connection", (socket) => {
     io.to(data.to).emit("receive-message", {
       from: data.from,
       content: data.content,
-      to: data.to
+      to: data.to,
+      timeStamp: Date.now()
     });
 
     io.to(data.from).emit("receive-message", {
       from: data.from,
       content: data.content,
-      to: data.to
+      to: data.to,
+      timeStamp: Date.now()
     });
   });
 
@@ -95,8 +97,8 @@ io.on("connection", (socket) => {
 
   });
 
-   socket.on("file-chunk", (data) => {
-    console.log("file-data",data)
+  socket.on("file-chunk", (data) => {
+    console.log("file-data", data)
     socket.in(data.recieverId).emit("recieve-file-chunk", {
       fileData: data.fileData
     })
