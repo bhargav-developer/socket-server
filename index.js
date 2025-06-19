@@ -52,9 +52,9 @@ io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
   socket.on("join", (userId) => {
-    lol = userId
+    socket.userId = userId
     socket.join(userId);
-    onlineUsers.set(lol,{
+    onlineUsers.set(socket.userId,{
       online: true
     })
     const obj = Object.fromEntries(onlineUsers);
@@ -118,12 +118,13 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
-    onlineUsers.set(lol,{
+    onlineUsers.set(socket.userId,{
       online: false,
       lastSeen: Date.now()
     })
    const obj = Object.fromEntries(onlineUsers);
     io.emit("update_users",obj)
+    console.log(onlineUsers)
   });
 });
 
