@@ -47,12 +47,18 @@ const io = new Server(server, {
 const onlineUsers = new Map()
 
 app.use("/messages", messageRouter)
-
+let lol = undefined
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
   socket.on("join", (userId) => {
+    lol = userId
     socket.join(userId);
+    onlineUsers.set(lol,{
+      online: true
+    })
+    const obj = Object.fromEntries(onlineUsers);
+    io.emit("update_users",obj)
     console.log(userId, "joined");
   });
 
@@ -112,6 +118,12 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
+    onlineUsers.set(lol,{
+      online: false,
+      lastSeen: Date.now()
+    })
+   const obj = Object.fromEntries(onlineUsers);
+    io.emit("update_users",obj)
   });
 });
 
