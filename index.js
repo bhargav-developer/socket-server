@@ -124,7 +124,6 @@ io.on("connection", (socket) => {
     })
    const obj = Object.fromEntries(onlineUsers);
     io.emit("update_users",obj)
-    console.log(onlineUsers)
   });
 });
 
