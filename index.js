@@ -98,18 +98,25 @@ io.on("connection", (socket) => {
   socket.on("file-transfer-request", (data) => {
 
     socket.in(data.reciever).emit("file-transfer-request", {
-      sender: data.name
+      sender: data.name,
+      senderId: data.sender
     })
 
   });
 
   socket.on("file-chunk", (data) => {
-    console.log("file-data", data)
-    socket.in(data.recieverId).emit("recieve-file-chunk", {
-      fileData: data.fileData
+    socket.in(data.reciverId).emit("recieve-file-chunk", {
+      chunk: data.buffer,
+      fileName: data.fileName
     })
-
   });
+
+  socket.on("file-end",(data) => {
+    socket.in(data.reciverId).emit("file-transfer-end",{
+      name: data.name,
+      fileType: data.fileType
+    })
+  })
 
   socket.on("accept-file-transfer", (data) => {
     console.log("req accepted")
