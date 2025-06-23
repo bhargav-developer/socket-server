@@ -6,6 +6,7 @@ import { config } from "dotenv";
 import Message from "./schema/Messages.js";
 import cors from 'cors'
 import messageRouter from "./routes/messageRoutes.js";
+import { messageHandler } from "./socketEvenHandlers/messages.js";
 config()
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -51,6 +52,8 @@ let lol = undefined
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
+  messageHandler(socket)
+
   socket.on("join", (userId) => {
     socket.userId = userId
     socket.join(userId);
@@ -62,31 +65,9 @@ io.on("connection", (socket) => {
     console.log(userId, "joined");
   });
 
-  const createMessage = async (data) => {
-    try {
-      const res = await Message.create(data)
-    } catch (error) {
-      console.log(error)
-    }
-  }
+  
 
-  socket.on("send-message", (data) => {
-
-    createMessage(data)
-    io.to(data.to).emit("receive-message", {
-      from: data.from,
-      content: data.content,
-      to: data.to,
-      timeStamp: Date.now()
-    });
-
-    io.to(data.from).emit("receive-message", {
-      from: data.from,
-      content: data.content,
-      to: data.to,
-      timeStamp: Date.now()
-    });
-  });
+  
 
   socket.on("file-meta", (data) => {
     socket.in(data.reciverId).emit("meta-transfer", [{
