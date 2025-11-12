@@ -8,7 +8,6 @@ export async function fileHandler(socket) {
     })
 
     socket.on("file-transfer-request", (data) => {
-
     socket.in(data.reciever).emit("file-transfer-request", {
       sender: data.name,
       senderId: data.sender
@@ -34,9 +33,9 @@ export async function fileHandler(socket) {
     })
   })
 
-
+  
   socket.on("accept-file-transfer", (data) => {
-    console.log("req accepted")
+    console.log("req accepted",data)
     socket.in(data.from).emit("file-transfer")
   })
 

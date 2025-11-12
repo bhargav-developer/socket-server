@@ -2,7 +2,6 @@ import Message from "../schema/Messages.js";
 
 export const getUserChatsList =  async (req, res) => {
   const { userId } = req.query;
-
   if (!userId) {
     return res.status(400).json({ error: "Missing userId" });
   }
