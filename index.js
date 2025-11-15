@@ -32,7 +32,7 @@ const PORT = 4000;
 const server = http.createServer(app);
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.CLIENT_URL,
   credentials: true,
 }));
 
