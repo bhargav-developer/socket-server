@@ -7,6 +7,7 @@ import cors from "cors";
 import messageRouter from "./routes/messageRoutes.js";
 import { messageHandler } from "./socketEvenHandlers/messages.js";
 import { fileHandler } from "./socketEvenHandlers/file.js";
+import userSockets from "./userSocketStore.js";
 config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -60,7 +61,7 @@ io.on("connection", (socket) => {
   socket.on("join", (userId) => {
     socket.userId = userId;
     socket.join(userId);
-
+    userSockets.set(userId, socket.id);
     onlineUsers.set(socket.userId, { online: true });
     io.emit("update_users", Object.fromEntries(onlineUsers));
     console.log(userId, "joined");
