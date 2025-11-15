@@ -31,11 +31,11 @@ const PORT = 4000;
 
 const server = http.createServer(app);
 
-app.use(cors({
-  origin: [process.env.CLIENT_URL,"localhost:3000","https://bhargav-msgapp.vercel.app/"],
-  credentials: true,
-}));
+app.use(cors())
 
+app.get("/",() => {
+  return "Hello world"
+})
 
 const io = new Server(server, {
   cors: {
