@@ -1,83 +1,81 @@
 import e from "express";
-import http from 'http';
-import { Server } from 'socket.io';
-import mongoose from 'mongoose';
+import http from "http";
+import { Server } from "socket.io";
+import mongoose from "mongoose";
 import { config } from "dotenv";
-import cors from 'cors'
+import cors from "cors";
 import messageRouter from "./routes/messageRoutes.js";
 import { messageHandler } from "./socketEvenHandlers/messages.js";
 import { fileHandler } from "./socketEvenHandlers/file.js";
-config()
+config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-
 if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable in .env.local'
-  );
+  throw new Error("Please define the MONGODB_URI environment variable in .env.local");
 }
 
-mongoose.connect(MONGODB_URI).then((next, err) => {
-  if (err) {
-    console.log(err)
-  }
-  console.log("connected to db")
-})
-
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log("Connected to DB"))
+  .catch(err => console.log("DB Error:", err));
 
 const app = e();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
+
+// IMPORTANT: Use explicit origins for production
+const allowedOrigins = [
+  "https://bhargav-msgapp.vercel.app",
+  "http://localhost:3000" // for local development
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
+app.get("/", (req, res) => {
+  res.send("Socket server is running");
+});
 
 const server = http.createServer(app);
 
-app.use(cors())
-
-app.get("/",() => {
-  return "Hello world"
-})
-
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
+const onlineUsers = new Map();
 
-const onlineUsers = new Map()
+app.use("/messages", messageRouter);
 
-app.use("/messages", messageRouter)
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
-  messageHandler(socket)
-  fileHandler(socket)
+  messageHandler(socket);
+  fileHandler(socket);
+
   socket.on("join", (userId) => {
-    socket.userId = userId
+    socket.userId = userId;
     socket.join(userId);
-    
-    onlineUsers.set(socket.userId,{
-      online: true
-    })
-    const obj = Object.fromEntries(onlineUsers);
-    io.emit("update_users",obj)
+
+    onlineUsers.set(socket.userId, { online: true });
+    io.emit("update_users", Object.fromEntries(onlineUsers));
     console.log(userId, "joined");
   });
 
-  
-
-
-
-
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
-    onlineUsers.set(socket.userId,{
-      online: false,
-      lastSeen: Date.now()
-    })
-   const obj = Object.fromEntries(onlineUsers);
-    io.emit("update_users",obj)
+
+    if (socket.userId) {
+      onlineUsers.set(socket.userId, {
+        online: false,
+        lastSeen: Date.now()
+      });
+      io.emit("update_users", Object.fromEntries(onlineUsers));
+    }
   });
 });
 
