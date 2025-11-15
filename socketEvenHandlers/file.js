@@ -4,6 +4,7 @@ export async function fileHandler(socket) {
         socket.in(data.reciverId).emit("meta-transfer", [{
             file: data.name,
             size: data.size,
+            fileType: data.fileType
         }])
     })
 
@@ -12,23 +13,28 @@ export async function fileHandler(socket) {
       sender: data.name,
       senderId: data.sender
     })
+    // socket.join();
 
   });
 
 
   
-  socket.on("file-chunk", (data) => {
+  socket.on("send-file-chunk", (data) => {
+  
     socket.in(data.reciverId).emit("recieve-file-chunk", {
       chunk: data.buffer,
-      fileName: data.fileName
+      file: data.name
     })
+  
   });
 
 
 
   socket.on("file-end",(data) => {
+    console.log(data)
     socket.in(data.reciverId).emit("file-transfer-end",{
       name: data.name,
+      file: data.name,
       fileType: data.fileType
     })
   })
