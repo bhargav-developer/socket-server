@@ -70,6 +70,12 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
 
+     socket.on("disconnect", () => {
+    for (const [id, sock] of userSockets.entries()) {
+      if (sock === socket.id) userSockets.delete(id);
+    }
+  });
+
     if (socket.userId) {
       onlineUsers.set(socket.userId, {
         online: false,
