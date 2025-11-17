@@ -1,4 +1,5 @@
-import userSockets from "../userSocketStore.js";
+import fileTrasferStore from "../stores/fileTransferStore.js";
+import userSockets from "../stores/userSocketStore.js";
 
 
 export async function fileHandler(socket) {
@@ -56,10 +57,37 @@ export async function fileHandler(socket) {
     })
   })
 
+  socket.on("close-file-transfer", ({ roomId }) => {
+  if (!roomId) return;
+
+  const fileTransfer = fileTrasferStore.get(roomId);
+  if (!fileTransfer) return;
+
+  const { receiverId, senderId } = fileTransfer;
+  console.log(fileTransfer)
+
+  if (receiverId) {
+    socket.in(receiverId).emit("close-file-transfer");
+    console.log("yes on reciver")
+  }
+
+  if (senderId) {
+    socket.in(senderId).emit("close-file-transfer");
+        console.log("yes on sender")
+  }
+
+  fileTrasferStore.delete(roomId); // clean up after close
+  console.log("File transfer closed:", roomId,fileTrasferStore);
+});
+
 
   socket.on("accept-file-transfer", (data) => {
     const senderSocketId = userSockets.get(data.senderId);
-    socket.in(senderSocketId).emit("file-transfer")
+    fileTrasferStore.set(data.roomId,{
+      senderId: data.senderId,
+      receiverId: data.reciverId
+    })
+    socket.in(senderSocketId).emit("file-transfer",data.roomId)
   })
 
 

@@ -7,7 +7,7 @@ import cors from "cors";
 import messageRouter from "./routes/messageRoutes.js";
 import { messageHandler } from "./socketEvenHandlers/messages.js";
 import { fileHandler } from "./socketEvenHandlers/file.js";
-import userSockets from "./userSocketStore.js";
+import userSockets from "./stores/userSocketStore.js";
 config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -51,6 +51,7 @@ const io = new Server(server, {
 const onlineUsers = new Map();
 
 app.use("/messages", messageRouter);
+app.use("/files", messageRouter);
 
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
