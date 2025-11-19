@@ -56,14 +56,15 @@ app.use("/files", messageRouter);
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
+  // Register your handlers
   messageHandler(socket);
-  fileHandler(socket);
+  fileHandler(io,socket);
 
   socket.on("join", (userId) => {
     socket.userId = userId;
     socket.join(userId);
     userSockets.set(userId, socket.id);
-    onlineUsers.set(socket.userId, { online: true });
+    onlineUsers.set(userId, { online: true });
     io.emit("update_users", Object.fromEntries(onlineUsers));
     console.log(userId, "joined");
   });
@@ -71,21 +72,22 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
 
-     socket.on("disconnect", () => {
+    // Remove from userSockets map
     for (const [id, sock] of userSockets.entries()) {
       if (sock === socket.id) userSockets.delete(id);
     }
-  });
 
+    // Update onlineUsers map
     if (socket.userId) {
       onlineUsers.set(socket.userId, {
         online: false,
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
       });
       io.emit("update_users", Object.fromEntries(onlineUsers));
     }
   });
 });
+
 
 server.listen(PORT, () => {
   console.log(`Socket server is running on port ${PORT}`);
