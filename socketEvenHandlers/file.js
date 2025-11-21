@@ -15,7 +15,6 @@ export function fileHandler(io, socket) {
     fileTransferStore.set(roomId, {
       senderId: socket.id,
       receiverId: receiverSocketId,
-      fileName: data.name,
     });
 
     // notify receiver
@@ -36,7 +35,7 @@ export function fileHandler(io, socket) {
 
     const session = fileTransferStore.get(roomId);
     if (!session) return;
-
+    console.log(data)
     io.to(session.receiverId).emit("meta-transfer", {
       roomId,
       fileName,
@@ -99,10 +98,9 @@ export function fileHandler(io, socket) {
   socket.on("close-file-transfer", ({ roomId }) => {
     const session = fileTransferStore.get(roomId);
     if (!session) return;
-
-    io.to(session.receiverId).emit("close-file-transfer");
     io.to(session.senderId).emit("close-file-transfer");
-
+    io.to(session.receiverId).emit("close-file-transfer");
+    console.log(session.senderId)
     fileTransferStore.delete(roomId);
   });
 
