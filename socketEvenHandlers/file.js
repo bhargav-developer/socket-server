@@ -30,12 +30,8 @@ export function fileHandler(io, socket) {
   socket.on("file-meta", (data) => {
     const { roomId, fileName, size, fileType } = data;
 
-
-    console.log(data)
-
     const session = fileTransferStore.get(roomId);
     if (!session) return;
-    console.log(data)
     io.to(session.receiverId).emit("meta-transfer", {
       roomId,
       fileName,
@@ -62,6 +58,14 @@ export function fileHandler(io, socket) {
     if (!senderSocketId) return;
 
     io.to(senderSocketId).emit("rejected-file-transfer", data.userName);
+  });
+
+  socket.on("chunk-ack", (data) => {
+    const { roomId } = data
+    const session = fileTransferStore.get(roomId);
+    if (!session) return;
+    console.log("data = ", session)
+    socket.to(session.senderId).emit("chunk-ack", data);
   });
 
 

@@ -40,13 +40,14 @@ app.get("/", (req, res) => {
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
+const io = new Server(server,
+  {
+    cors: {
+      origin: allowedOrigins,
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
 
 const onlineUsers = new Map();
 
@@ -58,7 +59,7 @@ io.on("connection", (socket) => {
 
   // Register your handlers
   messageHandler(socket);
-  fileHandler(io,socket);
+  fileHandler(io, socket);
 
   socket.on("join", (userId) => {
     socket.userId = userId;
