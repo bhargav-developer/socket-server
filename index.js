@@ -42,6 +42,7 @@ const server = http.createServer(app);
 
 const io = new Server(server,
   {
+    maxHttpBufferSize: 5 * 1024 * 1024, // server can take messages till 5mb
     cors: {
       origin: allowedOrigins,
       methods: ["GET", "POST"],
