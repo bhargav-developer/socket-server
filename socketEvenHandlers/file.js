@@ -97,15 +97,35 @@ export function fileHandler(io, socket) {
     });
   });
 
-
-  // ============= CLOSE SESSION ================
   socket.on("close-file-transfer", ({ roomId }) => {
-    const session = fileTransferStore.get(roomId);
-    if (!session) return;
-    io.to(session.senderId).emit("close-file-transfer");
-    io.to(session.receiverId).emit("close-file-transfer");
-    console.log(session.senderId)
-    fileTransferStore.delete(roomId);
+    try {
+      const session = fileTransferStore.get(roomId);
+      if (!session) {
+        console.warn(`No active session found for roomId: ${roomId}`);
+        return;
+      }
+
+      const { senderId, receiverId } = session;
+
+      console.log("Closing session:", { roomId, senderId, receiverId });
+
+      // Notify both peers
+      if (receiverId) {
+        socket.to(receiverId).emit("close-file-transfer");
+      }
+
+      if (senderId) {
+        socket.to(senderId).emit("close-file-transfer");
+      }
+
+      // Remove stored session
+      fileTransferStore.delete(roomId);
+      console.log(`File transfer session cleared for room ${roomId}`);
+
+    } catch (err) {
+      console.error("Error closing file transfer:", err);
+    }
   });
+
 
 }
