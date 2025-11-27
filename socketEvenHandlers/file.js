@@ -11,13 +11,11 @@ export function fileHandler(io, socket) {
 
     if (!receiverSocketId) return;
 
-    // store transfer session
     fileTransferStore.set(roomId, {
       senderId: socket.id,
       receiverId: receiverSocketId,
     });
 
-    // notify receiver
     io.to(receiverSocketId).emit("receiver-file-transfer-request", {
       senderName: data.name,
       senderId: data.senderId,
@@ -29,9 +27,9 @@ export function fileHandler(io, socket) {
   // ============= METADATA ================
   socket.on("file-meta", (data) => {
     const { roomId, fileName, size, fileType } = data;
-
     const session = fileTransferStore.get(roomId);
     if (!session) return;
+
     io.to(session.receiverId).emit("meta-transfer", {
       roomId,
       fileName,
@@ -42,10 +40,8 @@ export function fileHandler(io, socket) {
 
 
   // ============= ACCEPT TRANSFER ================
-  socket.on("accept-file-transfer", (data) => {
-    const { roomId } = data;
+  socket.on("accept-file-transfer", ({ roomId }) => {
     const session = fileTransferStore.get(roomId);
-
     if (!session) return;
 
     io.to(session.senderId).emit("file-transfer-start", { roomId });
@@ -60,25 +56,28 @@ export function fileHandler(io, socket) {
     io.to(senderSocketId).emit("rejected-file-transfer", data.userName);
   });
 
-  socket.on("chunk-ack", (data) => {
-    const { roomId } = data
+
+  // ============= CHUNK ACK ================
+  socket.on("chunk-ack", ({ roomId }) => {
     const session = fileTransferStore.get(roomId);
     if (!session) return;
-    console.log("data = ", session)
-    socket.to(session.senderId).emit("chunk-ack", data);
+
+    io.to(session.senderId).emit("chunk-ack");
   });
 
 
   // ============= RECEIVE CHUNK ================
   socket.on("send-file-chunk", (data) => {
     const { roomId, buffer, fileName } = data;
-
     const session = fileTransferStore.get(roomId);
     if (!session) return;
 
+    // only the original sender can send chunks
+    if (socket.id !== session.senderId) return;
+
     io.to(session.receiverId).emit("receive-file-chunk", {
-      chunk: buffer,
-      fileName
+      fileName,
+      chunk: buffer
     });
   });
 
@@ -86,7 +85,6 @@ export function fileHandler(io, socket) {
   // ============= END FILE ================
   socket.on("file-end", (data) => {
     const { roomId, fileName, fileType } = data;
-
     const session = fileTransferStore.get(roomId);
     if (!session) return;
 
@@ -97,35 +95,29 @@ export function fileHandler(io, socket) {
     });
   });
 
+
+  // ============= MANUAL CLOSE ================
   socket.on("close-file-transfer", ({ roomId }) => {
-    try {
-      const session = fileTransferStore.get(roomId);
-      if (!session) {
-        console.warn(`No active session found for roomId: ${roomId}`);
-        return;
-      }
+    const session = fileTransferStore.get(roomId);
+    if (!session) return;
 
-      const { senderId, receiverId } = session;
+    const { senderId, receiverId } = session;
 
-      console.log("Closing session:", { roomId, senderId, receiverId });
+    io.to(senderId).emit("close-file-transfer");
+    io.to(receiverId).emit("close-file-transfer");
 
-      // Notify both peers
-      if (receiverId) {
-        socket.to(receiverId).emit("close-file-transfer");
-      }
-
-      if (senderId) {
-        socket.to(senderId).emit("close-file-transfer");
-      }
-
-      // Remove stored session
-      fileTransferStore.delete(roomId);
-      console.log(`File transfer session cleared for room ${roomId}`);
-
-    } catch (err) {
-      console.error("Error closing file transfer:", err);
-    }
+    fileTransferStore.delete(roomId);
   });
 
 
+  // ============= CLEANUP ON DISCONNECT ================
+  socket.on("disconnect", () => {
+    for (const [roomId, session] of fileTransferStore.entries()) {
+      if (session.senderId === socket.id || session.receiverId === socket.id) {
+        io.to(session.senderId).emit("close-file-transfer");
+        io.to(session.receiverId).emit("close-file-transfer");
+        fileTransferStore.delete(roomId);
+      }
+    }
+  });
 }
