@@ -34,9 +34,10 @@ Supports message synchronization, file chunk streaming, delivery receipts, onlin
 git clone https://github.com/bhargav-developer/socket-server
 cd socket-server
 npm install
-
+```
 
 ## ▶️ Start the server
 
 ```bash
 npm run dev
+```
